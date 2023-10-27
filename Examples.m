@@ -8,7 +8,7 @@
 
 
 (* ::Section:: *)
-(*Basic exmample*)
+(*Basic example*)
 
 
 SimpleEquations={x[1]-x[2],1/2x[1]+x[2]-3};
