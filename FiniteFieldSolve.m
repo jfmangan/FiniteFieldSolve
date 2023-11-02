@@ -43,7 +43,7 @@ rationalToInt[aa_Integer,pp_Integer]:=Mod[aa,pp];
 
 PackageDir=$InputFileName//DirectoryName;(*Get the package's directory.  $InputeFileName is only available when you initialize the package so you have to store it as a private variable.*)
 
-CompileLibraryLink[numRow_Integer,numCol_Integer,prime_Integer]:=Block[{LibraryLinkFullPath,gccString, performanceString, headersString, matrixOptionsString, sourceString, oString,targetString,commandString,IsOpenMPInstalled,openmpString,message,sharedLibString,sharedLibExtension,os,uIntShort,uIntLong},
+CompileLibraryLink[numRow_Integer,numCol_Integer,prime_Integer]:=Block[{LibraryLinkFullPath,gccString, performanceString, headersString, matrixOptionsString, sourceString, oString,targetString,commandString,IsOpenMPInstalled,openmpString,message,sharedLibString,sharedLibExtension,os,uIntShort,uIntLong, procType, MarchOrMcpu},
 
 	If[!(prime<2^32&&PrimeQ[prime]),Print[prime, " needs to be prime and less than 2^32"];Abort[];];
 	
@@ -78,7 +78,18 @@ CompileLibraryLink[numRow_Integer,numCol_Integer,prime_Integer]:=Block[{LibraryL
 	IsOpenMPInstalled=False;(*True;*)
 	If[IsOpenMPInstalled, openmpString="-fopenmp ", openmpString=" "];
 	
-	performanceString = "-march=native -O3 ";
+	procType=$ProcessorType//ToLowerCase;
+	Which[StringContainsQ[procType,"x86"],
+	MarchOrMcpu="-march=native ";
+	,
+	StringContainsQ[procType,"arm"],
+	MarchOrMcpu="-mcpu=native ";
+	,
+	True,
+	MarchOrMcpu=" ";
+	];
+	performanceString = StringJoin[MarchOrMcpu,"-O3 "];
+
 	headersString = StringJoin["-I ", $InstallationDirectory, "/SystemFiles/IncludeFiles/C"];
 	matrixOptionsString = StringJoin[" -D PRIME=", prime // ToString, " -D NUM_ROW=", numRow//ToString, " -D NUM_COL=", numCol//ToString, " -D U_INT_SHORT=", uIntShort, " -D U_INT_LONG=", uIntLong, " "];
 	sourceString = StringJoin[LibraryLinkFullPath, ".cpp"];
