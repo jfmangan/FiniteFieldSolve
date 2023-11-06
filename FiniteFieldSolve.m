@@ -97,7 +97,7 @@ CompileLibraryLink[numRow_Integer,numCol_Integer,prime_Integer]:=Block[{LibraryL
 	targetString = StringJoin[LibraryLinkFullPath, sharedLibExtension];
 	commandString = StringJoin[gccString, performanceString, sharedLibString, openmpString, headersString, matrixOptionsString, sourceString, oString, targetString];
 	message=commandString // Run;
-	If[message=!=0,Print["Error compiling the shared library!  Try running the following command in a terminal for more information."];Print[commandString];Abort[];];
+	If[message=!=0,Print["Error compiling the shared library!  Try running the following command in a terminal for more information."];Print[commandString];If[StringContainsQ[procType,"arm"],Print["Different compilers have different issues with ARM processors so it may be worth disabling '-mcpu=native ' or trying '-march=native ' instead."];];Abort[];];
 
 ]
 
