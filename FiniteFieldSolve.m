@@ -447,5 +447,5 @@ Print["
 ---- FINITE FIELD SOLVE ----
 
 FiniteFieldSolve exactly solves large linear systems of equations over the rationals.
-Some pieces of the front end were borrowed from spasmlink written by Gregor K\[ADoubleDot]lin, Alex Edison, and Mao Zeng and available at https://gitlab.com/kaelingre/spasmlink.
-For more information about FiniteFieldSolve see ... by James Mangan."];
+Some pieces of the front end were borrowed from spasmlink written by Gregor K\[ADoubleDot]lin, Alex Edison, and Mao Zeng and available at gitlab.com/kaelingre/spasmlink.
+For more information about FiniteFieldSolve see github.com/jfmangan/FiniteFieldSolve and arxiv.org/abs/2311.01671 by James Mangan."];

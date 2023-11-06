@@ -1,7 +1,7 @@
 ## FiniteFieldSolve
 
 #### Overview
-FiniteFieldSolve is a Mathematica package for exactly solving large linear systems of equations over the rationals.  The package is distributed under GPLv3.
+FiniteFieldSolve is a Mathematica package for exactly solving large linear systems of equations over the rationals.  The package is distributed under GPLv3.  For more information see <https://arxiv.org/abs/2311.01671> by James Mangan.
 
 #### Installation
 To install FiniteFieldSolve, download and run InstallScript.m.  This script will create the folder `$UserBaseDirectory/Applications/FiniteFieldSolve` and then it will download FiniteFieldSolve.m and RowReduceLink.cpp to this folder.
@@ -26,3 +26,18 @@ like any other package.
 The basic syntax for solving a system is `FiniteFieldSolve[{a==b, a==1}]` which will return `{a->1, b->1}`.
 
 More examples can be found in Examples.m.
+
+#### Citation information
+
+If you do happen to use FiniteFieldSolve in your research, please cite it as
+```
+@article{finitefieldsolve,
+    author = "Mangan, James",
+    title = "{FiniteFieldSolve: Exactly Solving Large Linear Systems in High-Energy Theory}",
+    eprint = "2311.01671",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-th",
+    month = "11",
+    year = "2023"
+}
+```
