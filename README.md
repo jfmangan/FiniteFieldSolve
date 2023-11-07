@@ -31,7 +31,7 @@ More examples can be found in Examples.m.
 
 If you do happen to use FiniteFieldSolve in your research, please cite it as
 ```
-@article{finitefieldsolve,
+@article{Mangan:2023eeb,
     author = "Mangan, James",
     title = "{FiniteFieldSolve: Exactly Solving Large Linear Systems in High-Energy Theory}",
     eprint = "2311.01671",
