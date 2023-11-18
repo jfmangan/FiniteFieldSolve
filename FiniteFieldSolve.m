@@ -102,7 +102,7 @@ CompileLibraryLink[numRow_Integer,numCol_Integer,prime_Integer]:=Block[{LibraryL
 ]
 
 
-RowReduceOverPrime[coefArr_,prime_Integer,rowsToUse_:All,colsToUse_:All,nullvec_:{}]:=Block[
+RowReduceOverPrime[coefArr_,prime_Integer,rowsToUse_:All,colsToUse_:All]:=Block[
 	{i,row,mat,RowReduceNumericArray,PopulateRowOfMatrix,LibraryLinkFullPath,rowRange,colRange,uIntType},
 	
 	If[rowsToUse===All,rowRange=coefArr//Dimensions//First//Range,rowRange=rowsToUse];
@@ -128,8 +128,6 @@ RowReduceOverPrime[coefArr_,prime_Integer,rowsToUse_:All,colsToUse_:All,nullvec_
 	];
 	(*If coefArr is a SparseArray with low density then it is a little more effecient to do...*)
 	(*row=Quiet[Check[coefArr[[rowRange[[i]]]]//ArrayRules//MapAt[rationalToInt[#,prime]&,#,-1]&/@#&//SparseArray[#,coefArr//Dimensions//Last]&//NumericArray[#,uIntType]&,Return[$Failed]]];*)
-	
-	(*If[nullvec=!={},(*check if nullvec is a null vector*)];*)
 	
 	RowReduceNumericArray=LibraryFunctionLoad[LibraryLinkFullPath, "RowReduceNumericArray", {}, {LibraryDataType[SparseArray]}];
 	
