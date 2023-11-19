@@ -1,7 +1,7 @@
 ## FiniteFieldSolve
 
 #### Overview
-FiniteFieldSolve is a Mathematica package for exactly solving large linear systems of equations over the rationals.  The package is distributed under GPLv3.  For more information see <https://arxiv.org/abs/2311.01671> by James Mangan.
+FiniteFieldSolve is a Mathematica package for exactly solving large linear systems of equations over the rationals.  The package is distributed under GPLv3.  For more information see <https://arxiv.org/abs/2311.01671> by James Mangan.  If you encounter any issues, please feel free to reach out to me.
 
 #### Installation
 Running FiniteFieldSolve requires a C++ compiler.  Configuring the compiler depends on the operating system.

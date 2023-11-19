@@ -3,6 +3,10 @@
 #include "WolframNumericArrayLibrary.h"
 #include <cstdint>
 
+#if !ALLOC_STATIC_MEM
+#include <vector>
+#endif
+
 typedef U_INT_SHORT ushort_t;
 typedef U_INT_LONG ulong_t;
 typedef uint32_t index_t;
@@ -32,8 +36,12 @@ static const ulong_t prime=PRIME;//The largest prime that fits in 16bits is 6552
 //It is just as performant to declare mat as a vector of vectors inside main
 static const index_t NumRow=NUM_ROW;//const is static by default
 static const index_t NumCol=NUM_COL;
+
+#if ALLOC_STATIC_MEM
 static ushort_t mat[NumRow][NumCol];//The static keyword might not be needed but it's not hurting anything
-//std::vector< std::vector<ushort_t> >mat(NumRow, std::vector<ushort_t>(NumCol));
+#else
+std::vector< std::vector<ushort_t> >mat(NumRow, std::vector<ushort_t>(NumCol));
+#endif
 
 //Define the mod p function
 //KACTL modmull for 64-bit primes?
