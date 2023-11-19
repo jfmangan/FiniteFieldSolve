@@ -73,7 +73,7 @@ CompileLibraryLink[numRow_Integer,numCol_Integer,prime_Integer,StaticOrDynamicMe
 	MemCutoff=1/3//N;
 	If[MatMem>MemCutoff*FreeMem,
 		Print["Potentially low memory."];
-		Print["Free memory ",FreeMem//NumberForm[#,3]&," GB.  Memory needed for matrix ",MatMem//NumberForm[#,3]&," GB."];
+		Print["Free memory ",FreeMem//NumberForm[#,3]&//ToString," GB.  Memory needed for matrix ",MatMem//NumberForm[#,3]&//ToString," GB."];
 		If[StaticallyAllocateMem===True,
 			Print["If there is erratic behavior or crashes try adding 'dynamic' to optionsList."];,
 			Print["There may be erratic behavior or crashes."];
