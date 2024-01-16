@@ -115,3 +115,33 @@ SoftEqn=Table[amp/.p[4]->z p[4]/.MapListToRandomNumbers[IndepDots]//Series[#,{z,
 
 
 SoftSol=SoftEqn//0==#&/@#&//Reduce[#,Reverse[cVarsFull]]&//ToRules
+
+
+(* ::Section:: *)
+(*Dense example*)
+
+
+SeedRandom[1];
+RndMax=1000;
+RndRat:=RandomInteger[{1,RndMax}]/RandomInteger[{1,RndMax}];
+
+
+NumEqns=500;(*The number of equations is increased in the example in the paper.*)
+RndEqns=Table[x[i]-RndRat x[NumEqns+1],{i,1,NumEqns}];
+
+
+ScrambledEqns=Table[RndRat,NumEqns,NumEqns] . RndEqns;//AbsoluteTiming
+
+
+xVars=Array[x,NumEqns+1];
+ScrambledEqns//CoefficientArrays[#,xVars]&//Last//#["Density"]&
+
+
+(* ::Text:: *)
+(*The density will always be 100% by design*)
+
+
+ScrambledEqns//0==#&/@#&//Solve[#,Reverse[xVars]]&//Quiet//First//RndEqns/.#&//DeleteCases[0]//#==={}&//AbsoluteTiming
+
+
+ScrambledEqns//FiniteFieldSolve//RndEqns/.#&//DeleteCases[0]//#==={}&//AbsoluteTiming
