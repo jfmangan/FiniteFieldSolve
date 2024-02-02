@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #if !ALLOC_STATIC_MEM
-#include <vector>
+    #include <vector>
 #endif
 
 typedef U_INT_SHORT ushort_t;
@@ -38,9 +38,9 @@ static const index_t NumRow=NUM_ROW;//const is static by default
 static const index_t NumCol=NUM_COL;
 
 #if ALLOC_STATIC_MEM
-static ushort_t mat[NumRow][NumCol];//The static keyword might not be needed but it's not hurting anything
+    static ushort_t mat[NumRow][NumCol];//The static keyword might not be needed but it's not hurting anything
 #else
-std::vector< std::vector<ushort_t> >mat(NumRow, std::vector<ushort_t>(NumCol));
+    std::vector< std::vector<ushort_t> >mat(NumRow, std::vector<ushort_t>(NumCol));
 #endif
 
 //Define the mod p function
