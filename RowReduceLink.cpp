@@ -27,23 +27,21 @@ EXTERN_C DLLEXPORT void WolframLibrary_uninitialize( WolframLibraryData libData)
     return;
 }
 
-//It is just as performant to declare prime inside main.  The compiler figures everything out.  You have to modify ModP and FermatInverse if prime is inside main.
 static const ulong_t prime=PRIME;//The largest prime that fits in 16bits is 65521.
 //Mersenne primes don't improve performance likely due to a memory bandwidth bottleneck.
 //It's critical for performance that the prime be const
 
 //(row,col)=(i,j)
 //It is just as performant to declare mat as a vector of vectors inside main
-static const index_t NumRow=NUM_ROW;//const is static by default
+static const index_t NumRow=NUM_ROW;
 static const index_t NumCol=NUM_COL;
 
 #if ALLOC_STATIC_MEM
-    static ushort_t mat[NumRow][NumCol];//The static keyword might not be needed but it's not hurting anything
+    static ushort_t mat[NumRow][NumCol];
 #else
     std::vector< std::vector<ushort_t> >mat(NumRow, std::vector<ushort_t>(NumCol));
 #endif
 
-//Define the mod p function
 //KACTL modmull for 64-bit primes?
 inline ulong_t ModP(ulong_t input){
     return input%prime;
@@ -101,8 +99,8 @@ EXTERN_C DLLEXPORT int RowReduceNumericArray(WolframLibraryData libData, mint Ar
         //Find pivot col
         bool FoundPivot=false;
         index_t jPivot;
-        for(index_t j=0; j<NumCol; j++){//Rather than starting at j=0 you can keep track of the first potentially non-zero pivot col and start the loop there.  This would cut down on the range of the for loop.  However it doesn't make any impact on performance in testing and it makes the code uglier.
-            if(mat[iRow][j] != 0){//Worry about floats here
+        for(index_t j=0; j<NumCol; j++){
+            if(mat[iRow][j] != 0){
                 jPivot=j;
                 FoundPivot=true;
                 break;
@@ -117,10 +115,12 @@ EXTERN_C DLLEXPORT int RowReduceNumericArray(WolframLibraryData libData, mint Ar
         
         //Subtract off the pivot row from everyone else
         #pragma omp parallel for
+        #if ONLY_FIND_PIVOTS
+        for(index_t i=iRow+1; i<NumRow; i++){
+        #else
         for(index_t i=0; i<NumRow; i++){
-            //Worry about the next line for parallelization
-            //The if statement could be removed by changing the loop bounds but that would result in much uglier code
             if(i==iRow) continue;//Don't subtract the pivot row from itself
+        #endif
                 
             ulong_t mult=mat[i][jPivot];
             if(mult==0) continue;//If mult is already zero then there's nothing to do on this row
@@ -141,7 +141,11 @@ EXTERN_C DLLEXPORT int RowReduceNumericArray(WolframLibraryData libData, mint Ar
     mint NumNonZeroPos=0;
     for(index_t i=0; i<NumRow; i++){
         for(index_t j=0; j<NumCol; j++){
-            if(mat[i][j]!=0) NumNonZeroPos++;
+            if(mat[i][j]==0) continue;
+            NumNonZeroPos++;
+            #if ONLY_FIND_PIVOTS
+            break;
+            #endif
         }
     }
     
@@ -162,6 +166,9 @@ EXTERN_C DLLEXPORT int RowReduceNumericArray(WolframLibraryData libData, mint Ar
             PosCounter[1]=1;
             libData->MTensor_setInteger(ValsTensor, &ValsCounter, mat[i][j]);
             ValsCounter++;
+            #if ONLY_FIND_PIVOTS
+            break;
+            #endif
         }
     }
     

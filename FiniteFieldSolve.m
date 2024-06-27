@@ -39,8 +39,8 @@ RationalToInt[a_Integer,p_Integer]:=Mod[a,p];
 
 PackageDir=$InputFileName//DirectoryName;(*Get the package's directory.  $InputeFileName is only available when you initialize the package so you have to store it as a private variable.*)
 
-CompileLibraryLink[NumRow_Integer, NumCol_Integer, prime_Integer, StaticOrDynamicMem_:"static"]:=
-Block[{LibraryLinkFullPath, gccString, PerformanceString, HeadersString, MatrixOptionsString, SourceString, oString, TargetString, CommandString, IsOpenMPInstalled, OpenmpString, message, SharedLibString, SharedLibExtension, os, uIntShort, uIntLong, ProcType, MarchOrMcpu, BytesPerInt, FreeMem, MatMem, MemCutoff, MallocString, StaticallyAllocateMem},
+CompileLibraryLink[NumRow_Integer, NumCol_Integer, prime_Integer, StaticOrDynamicMem_:"static", FullSolveOrOnlyFindPivots_:"FullSolve"]:=
+Block[{LibraryLinkFullPath, gccString, PerformanceString, HeadersString, MatrixOptionsString, SourceString, oString, TargetString, CommandString, IsOpenMPInstalled, OpenmpString, message, SharedLibString, SharedLibExtension, os, uIntShort, uIntLong, ProcType, MarchOrMcpu, BytesPerInt, FreeMem, MatMem, MemCutoff, MallocString, StaticallyAllocateMem, OnlyFindPivotsString},
 
 	If[!(prime<2^32&&PrimeQ[prime]),Print[prime, " needs to be prime and less than 2^32"];Abort[];];
 	
@@ -119,13 +119,22 @@ Block[{LibraryLinkFullPath, gccString, PerformanceString, HeadersString, MatrixO
 		MallocString=" -D ALLOC_STATIC_MEM=true ",
 		MallocString=" -D ALLOC_STATIC_MEM=false "
 	];
+	
+	Which[ToLowerCase[FullSolveOrOnlyFindPivots]===ToLowerCase["FullSolve"],
+		OnlyFindPivotsString=" -D ONLY_FIND_PIVOTS=false ",
+		ToLowerCase[FullSolveOrOnlyFindPivots]===ToLowerCase["OnlyFindPivots"],
+		OnlyFindPivotsString=" -D ONLY_FIND_PIVOTS=true ",
+		True,
+		Print["'FullSolveOrOnlyFindPivots' needs to be 'FullSolve' or 'OnlyFindPivots'"];
+		Abort[];
+	];
 
 	HeadersString = StringJoin["-I ", $InstallationDirectory, "/SystemFiles/IncludeFiles/C"];
 	MatrixOptionsString = StringJoin[" -D PRIME=", prime // ToString, " -D NUM_ROW=", NumRow//ToString, " -D NUM_COL=", NumCol//ToString, " -D U_INT_SHORT=", uIntShort, " -D U_INT_LONG=", uIntLong, " "];
 	SourceString = StringJoin[LibraryLinkFullPath, ".cpp"];
 	oString = " -o ";
 	TargetString = StringJoin[LibraryLinkFullPath, SharedLibExtension];
-	CommandString = StringJoin[gccString, PerformanceString, SharedLibString, OpenmpString, HeadersString, MatrixOptionsString, MallocString, SourceString, oString, TargetString];
+	CommandString = StringJoin[gccString, PerformanceString, SharedLibString, OpenmpString, HeadersString, MatrixOptionsString, MallocString, OnlyFindPivotsString, SourceString, oString, TargetString];
 	message=CommandString // Run;
 	If[message=!=0,
 		Print["Error compiling the shared library!  Try running the following command in a terminal for more information."];
@@ -139,13 +148,16 @@ Block[{LibraryLinkFullPath, gccString, PerformanceString, HeadersString, MatrixO
 ];
 
 
-RowReduceOverPrime[CoefArr_,prime_Integer,StaticOrDynamicMem_:"static",RowsToUse_:All,ColsToUse_:All]:=
+RowReduceOverPrime[CoefArr_,prime_Integer,StaticOrDynamicMem_:"static",RowsToUse_:All,ColsToUse_:All]:=RowReduceOverPrimeHelper[CoefArr,prime,StaticOrDynamicMem,RowsToUse,ColsToUse,"FullSolve"];
+
+
+RowReduceOverPrimeHelper[CoefArr_,prime_Integer,StaticOrDynamicMem_:"static",RowsToUse_:All,ColsToUse_:All, FullSolveOrOnlyFindPivots_:"FullSolve"]:=
 Block[{i, row, mat, RowReduceNumericArray, PopulateRowOfMatrix, LibraryLinkFullPath, RowRange, ColRange, uIntType},
 	
 	If[RowsToUse===All,RowRange=CoefArr//Dimensions//First//Range,RowRange=RowsToUse];
 	If[ColsToUse===All,ColRange=CoefArr//Dimensions//Last//Range,ColRange=ColsToUse];
 	
-	CompileLibraryLink[RowRange//Length, ColRange//Length, prime, StaticOrDynamicMem];
+	CompileLibraryLink[RowRange//Length, ColRange//Length, prime, StaticOrDynamicMem, FullSolveOrOnlyFindPivots];
 	
 	(*Print["Dimensions: ", RowRange//Length, ", ", ColRange//Length];*)(*Helpful for debugging*)
 	
@@ -434,9 +446,9 @@ Block[{rref,NonZeroRows,RowsToUse},
 		RowsToUse=mat//Length//Range;
 	];
 	
-	rref=RowReduceOverPrime[mat,prime,MemType[OptionsList],RowsToUse];
+	rref=RowReduceOverPrimeHelper[mat,prime,MemType[OptionsList],RowsToUse,All,"OnlyFindPivots"];
 	If[rref===$Failed,Return[$Failed]];
-	NonZeroRows=rref["NonzeroPositions"]//First/@#&//Union;
+	NonZeroRows=rref["NonzeroPositions"]//First/@#&//Sort;
 	RowsToUse[[NonZeroRows]]
 ];
 
@@ -472,7 +484,7 @@ Block[{NonZeroPos,ProblematicRows,NumberOfVariables},
 ConsistentMatrixQ[CoefficientMatrix_, prime_Integer:65521, OptionsList_List:{}]:=
 Block[{rref},
 
-	rref=RowReduceOverPrime[CoefficientMatrix,prime,MemType[OptionsList]];
+	rref=RowReduceOverPrimeHelper[CoefficientMatrix,prime,MemType[OptionsList],All,All,"OnlyFindPivots"];
 	ConsistentMatrixQHelper[rref]
 ];
 
