@@ -470,7 +470,7 @@ Block[{mat,vars,rows},
 ];
 
 
-ConsistentMatrixQHelper[rref_]:=
+(*ConsistentMatrixQHelper[rref_]:=
 Block[{NonZeroPos,ProblematicRows,NumberOfVariables},
 
 	(*You have an inconsistent matrix if the last variable (which is supposed to represent 1) is ever set to zero, that is, if you ever have a row that involves the last variable where the number of non-zero entries in the row is 1.*)
@@ -478,6 +478,17 @@ Block[{NonZeroPos,ProblematicRows,NumberOfVariables},
 	NonZeroPos=rref["NonzeroPositions"];
 	ProblematicRows=NonZeroPos//Select[#,MatchQ[#,{_,NumberOfVariables}]&]&//First/@#&;
 	rref[[ProblematicRows]]//#["NonzeroPositions"]&/@#&//Length/@#&//MemberQ[#,1]&//Not(*This assumes that SparseArray correctly removes all zeros from "NonzeroPositions"*)
+];*)
+
+
+ConsistentMatrixQHelper[rref_]:=
+Block[{NumberOfVariables,RowColTuple},
+
+	(*The matrix is inconsistent if the last column is a pivot*)
+	NumberOfVariables=rref//Dimensions//Last;
+	RowColTuple=rref["NonzeroPositions"]//SelectFirst[#,MatchQ[#,{_,NumberOfVariables}]&]&;
+	If[RowColTuple===Missing["NotFound"], Return[True]];
+	rref[[RowColTuple//First]]["NonzeroPositions"]//Length[#]>1&
 ];
 
 
