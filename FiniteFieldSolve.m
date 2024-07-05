@@ -378,7 +378,7 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 			Quiet[Check[NullVec=varsReordered[[ColsToUse]]/.IndepVarsRep/.Dispatch[SolRules/.IndepVarsRep]//RationalToInt[#,PrimeList[[attempts]]]&/@#&;,PrintModErr; attempts++; Continue[];]];
 			(*The following matrix-vector multiplication is surprisingly fast.*)
 			Quiet[Check[FoundSolution=CoefArr[[RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]]] . NullVec//RationalToInt[#,PrimeList[[attempts]]]&/@#&//DeleteCases[0]//#==={}&;,PrintModErr; attempts++; Continue[];]];
-			(*FoundSolution will be true if the random null vector really is a null vector, meaning you've found a solution*)
+			(*FoundSolution will be true if the random null vector really is a null vector, meaning you've found a solution*) (*CoefArr[[RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]]] might incur a nasty memory hit. *)
 			If[FoundSolution,
 				Return[Join[ZeroRules,SolRules]];,
 				
