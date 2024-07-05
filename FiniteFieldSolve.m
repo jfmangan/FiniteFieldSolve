@@ -3,15 +3,15 @@
 BeginPackage["FiniteFieldSolve`"]
 
 
-FiniteFieldSolve::usage = "FiniteFieldSolve[equations, (optional: OptionsList)] solves a List of linear equations.  FiniteFieldSolve will automatically detect the variables in the equations.  The equations can contain '==' but if they do not contain '==' then it is assumed that the equation is equal to zero.  Note that 'equations' will likely take up more memory than the SparseArray representing them, so it is recommended to directly call FiniteFieldSolveMatrix for advanced usage.  OptionsList is an optional parameter taking the form {string1, string2...}.  Including 'verbose' in OptionsList will print more output.  By default FiniteFieldSolve will use the first prime it solves over to determine the linearly independent rows and only use those rows when solving over subsequent primes.  To disable this behavior include 'KeepLinearDepRows' in OptionsList.  By default FiniteFieldSolve will use the first prime to detect if solving the equations sets any variables to zero.  These variables will not be solved for in the future and the ensuing linearly dependent rows will be removed by row reducing over the second prime.  To disable this behavior include 'KeepZeroVariables' in OptionsList.  Row reduction will default to 16-bit primes which are generally faster and use less memory.  To use 32-bit primes include '32bit' in OptionsList.  Add 'ClearDenominators' to OptionsList in order to clear all of the denominators in the equations.  This is especially useful for dense equations generated numerically.  By default the equations are sorted by their density (after calling CoefficientArrrays on 'equations') so that more complicated linearly dependent rows are discarded.  To disable this feature include 'NoRowSorting' in OptionsList.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
+FiniteFieldSolve::usage = "FiniteFieldSolve[equations, (optional: OptionsList)] solves a List of linear equations.  FiniteFieldSolve will automatically detect the variables in the equations.  The equations can contain '==' but if they do not contain '==' then it is assumed that the equation is equal to zero.  Note that 'equations' will likely take up more memory than the SparseArray representing them, so it is recommended to directly call FiniteFieldSolveMatrix for advanced usage.  OptionsList is an optional parameter taking the form {string1, string2...}.  Including 'verbose' in OptionsList will print more output.  By default FiniteFieldSolve will use the first prime it solves over to determine the linearly independent rows and only use those rows when solving over subsequent primes.  To disable this behavior include 'KeepLinearDepRows' in OptionsList.  By default FiniteFieldSolve will use the first prime to detect if solving the equations sets any variables to zero.  These variables will not be solved for in the future and the ensuing linearly dependent rows will be removed by row reducing over the second prime.  To disable this behavior include 'KeepZeroVariables' in OptionsList.  Row reduction will default to 16-bit primes which are generally faster and use less memory.  To use 32-bit primes include '32bit' in OptionsList.  Add 'ClearDenominators' to OptionsList in order to clear all of the denominators in the equations.  This is especially useful for dense equations generated numerically.  By default the equations are sorted by their density (after calling CoefficientArrrays on 'equations') so that more complicated linearly dependent rows are discarded.  To disable this feature include 'NoRowSorting' in OptionsList.  By default sparser columns are sorted to be left of denser ones.  To disable this feature include 'NoColumnSorting' in OptionsList.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
 
-FiniteFieldSolveMatrix::usage = "FiniteFieldSolveMatrix[matrix, vars, homogeneous, (optional: OptionsList)] solves the linear system 'matrix' over the variables 'vars'.  The matrix does not need to be sparse or a SparseArray.  If homogeneous is False then the last element of vars is the variable used to represent 1 so you are always effectively solving the homogeneous system Ax=0.  OptionsList is an optional parameter taking the form {string1, string2...}.  By default FiniteFieldSolveMatrix will use the first prime it solves over to determine the linearly independent rows and only use those rows when solving over subsequent primes.  To disable this behavior include 'KeepLinearDepRows' in OptionsList.  By default FiniteFieldSolve will use the first prime to detect if solving the equations sets any variables to zero.  These variables will not be solved for in the future and the ensuing linearly dependent rows will be removed by row reducing over the second prime.  To disable this behavior include 'KeepZeroVariables' in OptionsList.  Row reduction will default to 16-bit primes which are generally faster and use less memory.  To use 32-bit primes include '32bit' in OptionsList.  By default if 'matrix' is a SparseArray then its rows will be sorted by their density so that more complicated linearly dependent rows are discarded.  To disable this feature include 'NoRowSorting' in OptionsList.  For memory reasons, 'ClearDenominators' is not an option for FiniteFieldSolveMatrix.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
+FiniteFieldSolveMatrix::usage = "FiniteFieldSolveMatrix[matrix, vars, homogeneous, (optional: OptionsList)] solves the linear system 'matrix' over the variables 'vars'.  The matrix does not need to be sparse or a SparseArray.  If homogeneous is False then the last element of vars is the variable used to represent 1 so you are always effectively solving the homogeneous system Ax=0.  OptionsList is an optional parameter taking the form {string1, string2...}.  By default FiniteFieldSolveMatrix will use the first prime it solves over to determine the linearly independent rows and only use those rows when solving over subsequent primes.  To disable this behavior include 'KeepLinearDepRows' in OptionsList.  By default FiniteFieldSolve will use the first prime to detect if solving the equations sets any variables to zero.  These variables will not be solved for in the future and the ensuing linearly dependent rows will be removed by row reducing over the second prime.  To disable this behavior include 'KeepZeroVariables' in OptionsList.  Row reduction will default to 16-bit primes which are generally faster and use less memory.  To use 32-bit primes include '32bit' in OptionsList.  By default if 'matrix' is a SparseArray then its rows will be sorted by their density so that more complicated linearly dependent rows are discarded.  To disable this feature include 'NoRowSorting' in OptionsList.  By default sparser columns are sorted to be left of denser ones.  To disable this feature include 'NoColumnSorting' in OptionsList.  For memory reasons, 'ClearDenominators' is not an option for FiniteFieldSolveMatrix.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
 
-RowReduceOverPrime::usage = "RowReduceOverPrime[matrix, prime, (optional: StaticOrDynamicMem), (optional: RowsToUse), (optional: ColsToUse)] row reduces 'matrix' (not necessarily sparse or a SparseArray) over the prime.  The prime must be less than 2^32 where primes less than 2^16 will be faster and consume less memory.  In the output, rows are not rearranged to be in strict RREF form.  Futhermore, rows of zeros are not deleted so it is easy to determine which rows of the initial matrix are linearly independent.  The function will return $Failed if the matrix could not be projected over the given prime.  RowsToUse is an optional argument that defaults to All.  If you only want to use certain rows in the matrix then set RowsToUse to, for example, {1,4,5...}.  ColsToUse is the analog of RowsToUse but for columns.  StaticOrDynamicMem controls how the memory for the matrix is allocated.  StaticOrDynamicMem defaults to 'static' where the matrix is statically allocated as a contiguous block of memory to improve speed.  For sufficiently large matrices there may not be a contiguous block of memory available so you may need to dynamically allocate the matrix by setting StaticOrDynamicMem to 'dynamic'.";
+RowReduceOverPrime::usage = "RowReduceOverPrime[matrix, prime, (optional: StaticOrDynamicMem), (optional: RowsToUse), (optional: ColsToUse)] row reduces 'matrix' (not necessarily sparse or a SparseArray) over the prime.  The prime must be less than 2^32 where primes less than 2^16 will be faster and consume less memory.  In the output, rows are not rearranged to be in strict RREF form.  Futhermore, rows of zeros are not deleted so it is easy to determine which rows of the initial matrix are linearly independent.  The function will return $Failed if the matrix could not be projected over the given prime.  RowsToUse is an optional argument that defaults to All.  If you only want to use certain rows in the matrix then set RowsToUse to, for example, {1,4,5...}.  ColsToUse is the analog of RowsToUse but for columns.  Unlike other functions in the package, rows and columns are never rearranged automatically internally.  StaticOrDynamicMem controls how the memory for the matrix is allocated.  StaticOrDynamicMem defaults to 'static' where the matrix is statically allocated as a contiguous block of memory to improve speed.  For sufficiently large matrices there may not be a contiguous block of memory available so you may need to dynamically allocate the matrix by setting StaticOrDynamicMem to 'dynamic'.";
 
-FindLinearlyIndependentRows::usage = "FindLinearlyIndependentRows[InputMatrix, (optional: prime), (optional: OptionsList)] returns a matrix made from the linearly independent rows of InputMatrix.  Running this function is considerably faster than solving the whole system so it may be valuable to run this function before solving an over-constrained system.  By default if 'InputMatrix' is a SparseArray then its rows will be sorted by their density so that more complicated linearly dependent rows are discarded.  To disable this feature include 'NoRowSorting' in OptionsList.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
+FindLinearlyIndependentRows::usage = "FindLinearlyIndependentRows[InputMatrix, (optional: prime), (optional: OptionsList)] returns a matrix made from the linearly independent rows of InputMatrix.  Running this function is considerably faster than solving the whole system so it may be valuable to run this function before solving an over-constrained system.  By default if 'InputMatrix' is a SparseArray then its rows will be sorted by their density so that more complicated linearly dependent rows are discarded.  To disable this feature include 'NoRowSorting' in OptionsList.  By default sparser columns are sorted to be left of denser ones.  To disable this feature include 'NoColumnSorting' in OptionsList.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
 
-FindLinearlyIndependentEquations::usage = "FindLinearlyIndependentEquations[InputEquations, (optional: prime), (optional: OptionsList)] returns the linearly independent InputEquations.  Running this function is considerably faster than solving the whole system so it may be valuable to run this function before solving an over-constrained system.  By default the rows of InputEquations are sorted by their density so that more complicated linearly dependent equations are discarded.  To disable this feature include 'NoRowSorting' in OptionsList.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
+FindLinearlyIndependentEquations::usage = "FindLinearlyIndependentEquations[InputEquations, (optional: prime), (optional: OptionsList)] returns the linearly independent InputEquations.  Running this function is considerably faster than solving the whole system so it may be valuable to run this function before solving an over-constrained system.  By default the rows of InputEquations are sorted by their density so that more complicated linearly dependent equations are discarded.  To disable this feature include 'NoRowSorting' in OptionsList.  By default sparser columns are sorted to be left of denser ones.  To disable this feature include 'NoColumnSorting' in OptionsList.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
 
 ConsistentMatrixQ::usage = "ConsistentMatrixQ[matrix, (optional: prime), (optional: OptionsList)] takes a matrix representing an inhomogeneous system of equations and returns False if the system is inconsistent and True otherwise.  As with FiniteFieldSolve, the last column of the matrix is assumed to represent the inhomogeneous terms.  Running this function may be considerably faster than solving the whole system so it may be valuable to run this function before solving an inhomogeneous system especially if an inconsistent solution is likely.  By default, the function statically allocates a contiguous block of memory for the matrix to improve performance.  This may not be possible for sufficiently large matrices, in which case you can switch to dynamically allocating the matrix by adding 'dynamic' to OptionsList.";
 
@@ -148,6 +148,31 @@ Block[{LibraryLinkFullPath, gccString, PerformanceString, HeadersString, MatrixO
 ];
 
 
+GetRowColOrdering[CoefArr_,OptionsList_List,HomoOrInhomo_String]:=Module[{RowOrdering, ColOrdering, NumCol},
+If[And[MemberQ[OptionsList//ToLowerCase,"NoRowSorting"//ToLowerCase]//Not,Head[CoefArr]===SparseArray],
+	RowOrdering=CoefArr//#["Density"]&/@#&//Ordering;
+	(*You could also sort the rows so that a row with its first non-zero entry very far right goes above other rows.  The rows that are high up don't need to update as many positions in the rows below them.  You could also sort rows by some combination of their density and the position of their first non-zero entry.*)
+	,
+	RowOrdering=CoefArr//Length//Range;
+	(*The reason you don't set RowsToUse to All is that you might omit certain rows later if RemoveVariablesSetToZero is True*)
+];
+
+NumCol=CoefArr//Dimensions//Last;
+If[And[MemberQ[OptionsList//ToLowerCase,"NoColumnSorting"//ToLowerCase]//Not,Head[CoefArr]===SparseArray],
+	(*Put sparser columns to the left of denser ones*)
+	If[HomogeneousQ[HomoOrInhomo],
+		ColOrdering=CoefArr//Transpose//#["Density"]&/@#&//Ordering;
+		,
+		ColOrdering=CoefArr//Transpose//#["Density"]&/@#&//Ordering//DeleteCases[#,NumCol]&//Append[#,NumCol]&;
+	];
+	,
+	ColOrdering=NumCol//Range;
+];
+
+{RowOrdering,ColOrdering}
+];
+
+
 RowReduceOverPrime[CoefArr_,prime_Integer,StaticOrDynamicMem_:"static",RowsToUse_:All,ColsToUse_:All]:=RowReduceOverPrimeHelper[CoefArr,prime,StaticOrDynamicMem,RowsToUse,ColsToUse,"FullSolve"];
 
 
@@ -229,7 +254,7 @@ Which[ToLowerCase[HomoOrInhomo]==="homogeneous",
 
 
 FiniteFieldSolveMatrix[CoefArr_,vars_List,HomoOrInhomo_,OptionsList_List:{}]:=
-Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projection, reconstruction, PrimeToUse, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning},
+Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projection, reconstruction, PrimeToUse, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered},
 	
 	(*Basic tests on input data*)
 	If[Not[Or[Head[CoefArr]==SparseArray,Head[CoefArr]==List]],Print["The Head of the input matrix needs to be List or SparseArray"];Abort[]];
@@ -267,23 +292,18 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 	attempts = 1;
 	projection=$Failed;
 	
-	(*If requested, do not sort the rows of CoefArr by their density.*)
-	If[And[MemberQ[OptionsList//ToLowerCase,"NoRowSorting"//ToLowerCase]//Not,Head[CoefArr]===SparseArray],
-		RowsToUse=CoefArr//#["Density"]&/@#&//Ordering;
-		(*You could also sort the rows so that a row with its first non-zero entry very far right goes above other rows.  The rows that are high up don't need to update as many positions in the rows below them.  You could also sort rows by some combination of their density and the position of their first non-zero entry.*)
-		(*RowsToUse=CoefArr//#["NonzeroPositions"]&/@#&//First/@#&//Flatten//-1*#&/@#&//Ordering;(*Assumes that SparseArray positions are already sorted*)*)
-		,
-		RowsToUse=CoefArr//Length//Range;
-		(*The reason you don't set RowsToUse to All is that you might omit certain rows later if RemoveVariablesSetToZero is True*)
-	];
-	
+	(*If requested, do not sort the rows/cols of CoefArr by their density.*)
+	{RowOrdering,ColOrdering}=GetRowColOrdering[CoefArr,OptionsList,HomoOrInhomo]; (*Row/ColOrdering maps from the ordering you'll use now versus the order that CoefArr was in when it was handed to you.*)
+	{RowsToUse,ColsToUse}={RowOrdering,ColOrdering}//Length/@#&//Range/@#&; (*Rows/ColsToUse are the reordered rows/cols you actually want to use.*)
+	varsReordered=vars[[ColOrdering]];
+		
 	(*Build initial solution*)
 	(*For the first prime, check if the matrix is inconsistent, select the linearly independent rows, and omit columns that only serve to set variables to zero.*)
 	
 	While[projection===$Failed,
 		VerbosePrint["Matrix dimensions: ", CoefArr//Dimensions];
 		TmpTime=AbsoluteTime[];
-		projection = RowReduceOverPrime[CoefArr,PrimeList[[attempts]],MemType[OptionsList],RowsToUse];(*projection may contain rows of zeros representing linearly dependent rows*)
+		projection = RowReduceOverPrime[CoefArr,PrimeList[[attempts]],MemType[OptionsList],RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]];(*projection may contain rows of zeros representing linearly dependent rows*)
 		(*All rows of zeros are included in projection right now so projection is just a pure rref*)
 		VerbosePrint["Time (sec) used to row reduce: ", AbsoluteTime[]-TmpTime];
 		If[projection===$Failed,PrintModErr;];		
@@ -317,12 +337,11 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 	(*As an example of why the RREF tells you which columns to remove but not which rows, consider the matrix {{1,1,x},{1,0,0}}.*)
 	If[RemoveVariablesSetToZero,
 		ColumnsOfZeroVars=projection["NonzeroPositions"]//GatherBy[#,First]&//Select[#,Length[#]==1&]&//Flatten/@#&//Last/@#&;
-		ZeroRules=ColumnsOfZeroVars//vars[[#]]&/@#&//#->0&/@#&;
-		ColsToUse=(projection//Dimensions//Last//Range)~Complement~ColumnsOfZeroVars;(*So this is just the complement of ColumnsOfZeroVars*)
+		ZeroRules=ColumnsOfZeroVars//varsReordered[[#]]&/@#&//#->0&/@#&;
+		ColsToUse=ColsToUse~Complement~ColumnsOfZeroVars;(*So this is just the complement of ColumnsOfZeroVars*)
 		If[ColsToUse==={},Return[ZeroRules]];
 		,
 		ZeroRules={};
-		ColsToUse=All;
 	];
 	
 	projection=projection//#[[All,ColsToUse]]&//SortMatIntoStrictRREFForm;
@@ -348,7 +367,7 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 			PrimeToUse = PrimeList[[attempts]];
 			TmpTime=AbsoluteTime[];
 			
-			SolRules = rrefToRules[reconstruction,vars[[ColsToUse]],OneAlias];
+			SolRules = rrefToRules[reconstruction,varsReordered[[ColsToUse]],OneAlias];
 			If[SolRules===$Failed,
 				Print["Inconsistent solution"];
 				Return[{OneAlias->0}]
@@ -356,15 +375,15 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 			
 			IndepVars=SolRules//Last/@#&//Union//Variables;
 			IndepVarsRep=IndepVars//MapThread[Rule,{#,RandomInteger[{0,PrimeList[[attempts]]-1},Length[#]]}]&//Dispatch;
-			Quiet[Check[NullVec=vars[[ColsToUse]]/.IndepVarsRep/.Dispatch[SolRules/.IndepVarsRep]//RationalToInt[#,PrimeList[[attempts]]]&/@#&;,PrintModErr; attempts++; Continue[];]];
+			Quiet[Check[NullVec=varsReordered[[ColsToUse]]/.IndepVarsRep/.Dispatch[SolRules/.IndepVarsRep]//RationalToInt[#,PrimeList[[attempts]]]&/@#&;,PrintModErr; attempts++; Continue[];]];
 			(*The following matrix-vector multiplication is surprisingly fast.*)
-			Quiet[Check[FoundSolution=CoefArr[[RowsToUse,ColsToUse]] . NullVec//RationalToInt[#,PrimeList[[attempts]]]&/@#&//DeleteCases[0]//#==={}&;,PrintModErr; attempts++; Continue[];]];
+			Quiet[Check[FoundSolution=CoefArr[[RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]]] . NullVec//RationalToInt[#,PrimeList[[attempts]]]&/@#&//DeleteCases[0]//#==={}&;,PrintModErr; attempts++; Continue[];]];
 			(*FoundSolution will be true if the random null vector really is a null vector, meaning you've found a solution*)
 			If[FoundSolution,
 				Return[Join[ZeroRules,SolRules]];,
 				
 				VerbosePrint["Matrix dimensions: ", {Length[RowsToUse],Length[ColsToUse]}];
-				NewProjection = RowReduceOverPrime[CoefArr,PrimeList[[attempts]],MemType[OptionsList],RowsToUse,ColsToUse];
+				NewProjection = RowReduceOverPrime[CoefArr,PrimeList[[attempts]],MemType[OptionsList],RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]];
 				VerbosePrint["Time (sec) used to row reduce: ", AbsoluteTime[]-TmpTime];
 				If[NewProjection===$Failed,PrintModErr;];
 				attempts++;
@@ -448,19 +467,13 @@ Block[{vars, matrix, homogeneous, CoefArrs, sol, HomoOrInhomo},
 
 
 FindLinearlyIndependentRowsHelper[mat_, prime_Integer:65521, OptionsList_List:{}]:=
-Block[{rref,NonZeroRows,RowsToUse},
+Block[{rref,NonZeroRows,RowOrdering,ColOrdering},
 
-	(*If requested, do not sort the rows of CoefArr by their density.*)
-	If[And[MemberQ[OptionsList//ToLowerCase,"NoRowSorting"//ToLowerCase]//Not,Head[mat]===SparseArray],
-		RowsToUse=mat//#["Density"]&/@#&//Ordering;
-		,
-		RowsToUse=mat//Length//Range;
-	];
-	
-	rref=RowReduceOverPrimeHelper[mat,prime,MemType[OptionsList],RowsToUse,All,"OnlyFindPivots"];
+	{RowOrdering,ColOrdering}=GetRowColOrdering[mat,OptionsList,"inhomogeneous"];(*It shouldn't matter if the sys is homogeneous or not*)
+	rref=RowReduceOverPrimeHelper[mat,prime,MemType[OptionsList],RowOrdering,ColOrdering,"OnlyFindPivots"];
 	If[rref===$Failed,Return[$Failed]];
 	NonZeroRows=rref["NonzeroPositions"]//First/@#&//Sort;
-	RowsToUse[[NonZeroRows]]
+	RowOrdering[[NonZeroRows]]
 ];
 
 
