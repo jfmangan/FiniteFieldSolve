@@ -217,11 +217,21 @@ MemType[OptionsList_]:=If[MemberQ[OptionsList//ToLowerCase,"dynamic"//ToLowerCas
 ];
 
 
-FiniteFieldSolveMatrix[CoefArr_,vars_List,homogeneous_,OptionsList_List:{}]:=
+HomogeneousQ[HomoOrInhomo_]:=
+Which[ToLowerCase[HomoOrInhomo]==="homogeneous",
+	True,
+	ToLowerCase[HomoOrInhomo]==="inhomogeneous",
+	False,
+	True,
+	Print[HomoOrInhomo, " needs to be 'homogeneous' or 'inhomogeneous'."];
+	Abort[];
+];
+
+
+FiniteFieldSolveMatrix[CoefArr_,vars_List,HomoOrInhomo_,OptionsList_List:{}]:=
 Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projection, reconstruction, PrimeToUse, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning},
 	
 	(*Basic tests on input data*)
-	If[BooleanQ[homogeneous]==False,Print[homogeneous, " needs to be True or False"];Abort[]];
 	If[Not[Or[Head[CoefArr]==SparseArray,Head[CoefArr]==List]],Print["The Head of the input matrix needs to be List or SparseArray"];Abort[]];
 	If[(CoefArr//Dimensions//Last)=!=Length[vars],Print["The number of variables does not match the number of columns in the matrix"];Abort[]];
 	
@@ -229,7 +239,7 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 	RemoveVariablesSetToZero=MemberQ[OptionsList//ToLowerCase,"KeepZeroVariables"//ToLowerCase]//Not;
 	
 	(*If the system is inhomogeneous, make OneAlias the last element of vars*)
-	If[homogeneous,OneAlias=Nothing,OneAlias=vars//Last];
+	If[HomogeneousQ[HomoOrInhomo],OneAlias=Nothing,OneAlias=vars//Last];
 	
 	If[MemberQ[OptionsList//ToLowerCase,"verbose"],VerbosePrint[str___]:=Print[str]];
 	IssuedWarning=False;
@@ -285,9 +295,9 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 	If[projection["NonzeroPositions"]==={},Print["Zero input matrix detected."];Return[{}]];
 	
 	(*Check to see if the matrix is inconsistent and abort if it is.  There's no need to fully solve the system if you can quickly find out that it's inconsistent.*)
-	If[homogeneous===False,
+	If[!HomogeneousQ[HomoOrInhomo],
 		(*The if statements are nested for performance reasons.  You don't want to call ConsistentMatrixQHelper unnecessarily.*)
-		If[ConsistentMatrixQHelper[projection]===False,
+		If[!ConsistentMatrixQHelper[projection],
 			Print["Inconsistent solution"];
 			Abort[];
 		];
@@ -423,15 +433,16 @@ Block[{vars, matrix, homogeneous, CoefArrs},
 
 
 FiniteFieldSolve[equations_List, OptionsList_List:{}]:=
-Block[{vars, matrix, homogeneous, CoefArrs, sol},
+Block[{vars, matrix, homogeneous, CoefArrs, sol, HomoOrInhomo},
 
 	{matrix,vars}=EquationsToMatrixAndVars[equations];
 	homogeneous=vars//Last//#===one&//Not;
+	If[homogeneous,HomoOrInhomo="homogeneous",HomoOrInhomo="inhomogeneous"];
 
 	If[MemberQ[OptionsList//ToLowerCase,"ClearDenominators"//ToLowerCase], matrix=matrix//LCMHelper/@#&//SparseArray];
 	(*I don't have the option to clear denominators in FiniteFieldSolveMatrix because I don't want to incur an unnecessary memory hit.*)
 
-	sol=FiniteFieldSolveMatrix[matrix,vars,homogeneous,OptionsList];
+	sol=FiniteFieldSolveMatrix[matrix,vars,HomoOrInhomo,OptionsList];
 	If[homogeneous,sol,sol/.one->1]
 ];
 
