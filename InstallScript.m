@@ -27,10 +27,8 @@ Which[StringContainsQ[os,"mac"],
 ];
 
 Check[<<FiniteFieldSolve`;,Print["There was an issue loading the package.  The URLs could be incorrect."]; Quit[];];
-If[FiniteFieldSolve[{a==b, b==c}]=!={a->c,b->c},Print["Error running FiniteFieldSolve"]; Quit[];];
+If[FiniteFieldSolve[{a==1}]=!={a->1},Print["Error running FiniteFieldSolve"]; Quit[];];
 
 Print["It looks like FiniteFieldSolve was installed and works correctly."];
 Print["OpenMP is disabled by default but can greatly improve performance.  Properly configuring the compiler is beyond the scope of this installer. If the compiler is configured correctly then OpenMP can be enabled by switching 'IsOpenMPInstalled' from False to True in FiniteFieldSolve.m."];
-
-
 

@@ -86,7 +86,7 @@ Block[{LibraryLinkFullPath, gccString, PerformanceString, HeadersString, MatrixO
 	os=$SystemID//ToLowerCase;
 	Which[StringContainsQ[os,"mac"],
 		(*mac options*)
-		gccString = "clang++ ";(*"/usr/local/bin/g++-12 ";*)
+		gccString = "clang++ ";(*/opt/homebrew/bin/g++-14;*)(*"/usr/local/bin/g++-12 ";*)
 		SharedLibString="-dynamiclib ";
 		SharedLibExtension=".dylib";
 		,
