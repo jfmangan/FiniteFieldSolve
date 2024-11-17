@@ -33,11 +33,14 @@ If you do happen to use FiniteFieldSolve in your research, please cite it as
 ```
 @article{Mangan:2023eeb,
     author = "Mangan, James",
-    title = "{FiniteFieldSolve: Exactly Solving Large Linear Systems in High-Energy Theory}",
+    title = "{FiniteFieldSolve: Exactly solving large linear systems in high-energy theory}",
     eprint = "2311.01671",
     archivePrefix = "arXiv",
     primaryClass = "hep-th",
-    month = "11",
-    year = "2023"
+    doi = "10.1016/j.cpc.2024.109171",
+    journal = "Comput. Phys. Commun.",
+    volume = "300",
+    pages = "109171",
+    year = "2024"
 }
 ```
