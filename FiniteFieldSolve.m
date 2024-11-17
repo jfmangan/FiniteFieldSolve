@@ -254,7 +254,7 @@ Which[ToLowerCase[HomoOrInhomo]==="homogeneous",
 
 
 FiniteFieldSolveMatrix[CoefArr_,vars_List,HomoOrInhomo_,OptionsList_List:{}]:=
-Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projection, reconstruction, PrimeToUse, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered},
+Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, projection, reconstruction, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered},
 	
 	(*Basic tests on input data*)
 	If[Not[Or[Head[CoefArr]==SparseArray,Head[CoefArr]==List]],Print["The Head of the input matrix needs to be List or SparseArray"];Abort[]];
@@ -282,14 +282,10 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 		mat
 	];
 	
-	If[MemberQ[OptionsList//ToLowerCase,"32bit"//ToLowerCase],
-		PrimeList = Range[203280221,203280221-500,-1]//Prime/@#&(*The largest prime needs to fit in 32 bits*)
-		,
-		PrimeList = Range[6542,6542-500,-1]//Prime/@#&;(*The largest prime needs to fit in 16 bits*)
-	];
+	NumBits=If[MemberQ[OptionsList//ToLowerCase,"32bit"//ToLowerCase],32,16];
+	CurrentPrime=NextPrime[2^NumBits];
 	
 	UsedPrimes = {};
-	attempts = 1;
 	projection=$Failed;
 	
 	(*If requested, do not sort the rows/cols of CoefArr by their density.*)
@@ -301,14 +297,14 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 	(*For the first prime, check if the matrix is inconsistent, select the linearly independent rows, and omit columns that only serve to set variables to zero.*)
 	
 	While[projection===$Failed,
+		CurrentPrime=NextPrime[CurrentPrime,-1];
 		VerbosePrint["Matrix dimensions: ", CoefArr//Dimensions];
 		TmpTime=AbsoluteTime[];
-		projection = RowReduceOverPrime[CoefArr,PrimeList[[attempts]],MemType[OptionsList],RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]];(*projection may contain rows of zeros representing linearly dependent rows*)
+		projection = RowReduceOverPrime[CoefArr,CurrentPrime,MemType[OptionsList],RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]];(*projection may contain rows of zeros representing linearly dependent rows*)
 		(*All rows of zeros are included in projection right now so projection is just a pure rref*)
 		VerbosePrint["Time (sec) used to row reduce: ", AbsoluteTime[]-TmpTime];
 		If[projection===$Failed,PrintModErr;];		
-		UsedPrimes = {PrimeList[[attempts]]};
-		attempts++;
+		UsedPrimes = {CurrentPrime};
 	];
 	
 	(*Test if you were handed the zero matrix.  This will erroneously abort if you were handed a matrix of only 65521's (or multiples of whatever prime you are reducing over).*)
@@ -352,7 +348,7 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 	reconstruction = SparseArray[projection["NonzeroPositions"]->(Reconstruct[#,UsedPrimes[[1]]]&/@projection["NonzeroValues"]),Dimensions[projection]];
 	VerbosePrint["Prime used: ",UsedPrimes[[1]]];
 	
-	While[attempts<=Length[PrimeList],
+	While[CurrentPrime>2^(NumBits-1),(*Primes < 2^(NumBits-1) are used during compiled rational reconstruction*)
 	
 		VerbosePrint["Working on prime number: ", Length[UsedPrimes]+1];
 		
@@ -364,7 +360,7 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 		
 		NewProjection = $Failed;
 		While[NewProjection===$Failed,
-			PrimeToUse = PrimeList[[attempts]];
+			CurrentPrime=NextPrime[CurrentPrime,-1];
 			TmpTime=AbsoluteTime[];
 			
 			SolRules = rrefToRules[reconstruction,varsReordered[[ColsToUse]],OneAlias];
@@ -374,29 +370,26 @@ Block[{attempts, SolRules, VerbosePrint, OneAlias, PrimeList, UsedPrimes, projec
 			];
 			
 			IndepVars=SolRules//Last/@#&//Union//Variables;
-			IndepVarsRep=IndepVars//MapThread[Rule,{#,RandomInteger[{0,PrimeList[[attempts]]-1},Length[#]]}]&//Dispatch;
-			Quiet[Check[NullVec=varsReordered[[ColsToUse]]/.IndepVarsRep/.Dispatch[SolRules/.IndepVarsRep]//RationalToInt[#,PrimeList[[attempts]]]&/@#&;,PrintModErr; attempts++; Continue[];]];
+			IndepVarsRep=IndepVars//MapThread[Rule,{#,RandomInteger[{0,CurrentPrime-1},Length[#]]}]&//Dispatch;
+			Quiet[Check[NullVec=varsReordered[[ColsToUse]]/.IndepVarsRep/.Dispatch[SolRules/.IndepVarsRep]//RationalToInt[#,CurrentPrime]&/@#&;,PrintModErr; Continue[];]];
 			(*The following matrix-vector multiplication is surprisingly fast.*)
-			Quiet[Check[FoundSolution=CoefArr[[RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]]] . NullVec//RationalToInt[#,PrimeList[[attempts]]]&/@#&//DeleteCases[0]//#==={}&;,PrintModErr; attempts++; Continue[];]];
+			Quiet[Check[FoundSolution=CoefArr[[RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]]] . NullVec//RationalToInt[#,CurrentPrime]&/@#&//DeleteCases[0]//#==={}&;,PrintModErr; Continue[];]];
 			(*FoundSolution will be true if the random null vector really is a null vector, meaning you've found a solution*) (*CoefArr[[RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]]] might incur a nasty memory hit. *)
-			If[FoundSolution,
-				Return[Join[ZeroRules,SolRules]];,
-				
-				VerbosePrint["Matrix dimensions: ", {Length[RowsToUse],Length[ColsToUse]}];
-				NewProjection = RowReduceOverPrime[CoefArr,PrimeList[[attempts]],MemType[OptionsList],RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]];
-				VerbosePrint["Time (sec) used to row reduce: ", AbsoluteTime[]-TmpTime];
-				If[NewProjection===$Failed,PrintModErr;];
-				attempts++;
-			];
+			If[FoundSolution,Return[Join[ZeroRules,SolRules]];];
+							
+			VerbosePrint["Matrix dimensions: ", {Length[RowsToUse],Length[ColsToUse]}];
+			NewProjection = RowReduceOverPrime[CoefArr,CurrentPrime,MemType[OptionsList],RowOrdering[[RowsToUse]],ColOrdering[[ColsToUse]]];
+			VerbosePrint["Time (sec) used to row reduce: ", AbsoluteTime[]-TmpTime];
+			If[NewProjection===$Failed,PrintModErr;];
 		];
-		VerbosePrint["Prime used: ",PrimeToUse];
+		VerbosePrint["Prime used: ",CurrentPrime];
 		
 		LinearIndepRows=NewProjection["NonzeroPositions"]//First/@#&//Union;
 		NewProjection=NewProjection[[LinearIndepRows]];
 		NewProjection = NewProjection//SortMatIntoStrictRREFForm;
-		NewProjection = ChineseRemainderMats[{projection,NewProjection},{Times@@UsedPrimes,PrimeToUse}];
+		NewProjection = ChineseRemainderMats[{projection,NewProjection},{Times@@UsedPrimes,CurrentPrime}];
 
-		AppendTo[UsedPrimes,PrimeToUse];
+		AppendTo[UsedPrimes,CurrentPrime];
 		
 		NewConstruction = SparseArray[NewProjection["NonzeroPositions"]->(Reconstruct[#,Times@@UsedPrimes]&/@NewProjection["NonzeroValues"]),Dimensions[NewProjection]];
 									
