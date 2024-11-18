@@ -254,7 +254,7 @@ Which[ToLowerCase[HomoOrInhomo]==="homogeneous",
 
 
 FiniteFieldSolveMatrix[CoefArr_,vars_List,HomoOrInhomo_,OptionsList_List:{}]:=
-Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, projection, reconstruction, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered},
+Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, projection, reconstruction, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered, RatRecon},
 	
 	(*Basic tests on input data*)
 	If[Not[Or[Head[CoefArr]==SparseArray,Head[CoefArr]==List]],Print["The Head of the input matrix needs to be List or SparseArray"];Abort[]];
@@ -345,7 +345,8 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 	(*After removing variables that are set to zero, the matrix could be empty, so you return early.  (Proceeding with normal execution will produce many errors.)  You could mistakenly return early here if your matrix involves a bunch of variables that get set to zero and all of the other entries in the matrix are multiples of 65521 (or another prime) that 'projection' interprets as 0.*)
 	If[projection==={},Return[ZeroRules]];(*If projection is an empty SparseArray (after the zero vars are removed) then SortMatIntoStrictRREFForm will turn projection into {}.*)
 	
-	reconstruction = SparseArray[projection["NonzeroPositions"]->(Reconstruct[#,UsedPrimes[[1]]]&/@projection["NonzeroValues"]),Dimensions[projection]];
+	RatRecon[x_]:=Reconstruct[x,UsedPrimes[[1]]];
+	reconstruction = SparseArray[projection["NonzeroPositions"]->(RatRecon/@projection["NonzeroValues"]),Dimensions[projection]];
 	VerbosePrint["Prime used: ",UsedPrimes[[1]]];
 	
 	While[CurrentPrime>2^(NumBits-1),(*Primes < 2^(NumBits-1) are used during compiled rational reconstruction*)
@@ -391,7 +392,8 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 
 		AppendTo[UsedPrimes,CurrentPrime];
 		
-		NewConstruction = SparseArray[NewProjection["NonzeroPositions"]->(Reconstruct[#,Times@@UsedPrimes]&/@NewProjection["NonzeroValues"]),Dimensions[NewProjection]];
+		RatRecon[x_]:=Reconstruct[x,Times@@UsedPrimes];
+		NewConstruction = SparseArray[NewProjection["NonzeroPositions"]->(RatRecon/@NewProjection["NonzeroValues"]),Dimensions[NewProjection]];
 									
 		(*------------*)
 		
