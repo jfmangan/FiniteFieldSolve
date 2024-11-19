@@ -22,7 +22,7 @@ Begin["`Private`"]
 
 
 Reconstruct[0, _]:=0;
-Reconstruct[a_, n_]:=With[{v=LatticeReduce[{{a, 1}, {n, 0}}][[1]]}, v[[1]]/v[[2]]];
+Reconstruct[a_, n_]:=LatticeReduce[{{a, 1}, {n, 0}}][[1]]//Rational@@#&;
 (*From Ben Page https://youtu.be/3cGyeN1a7bs?t=2806*)
 
 
