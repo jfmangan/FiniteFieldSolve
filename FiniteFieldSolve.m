@@ -414,7 +414,9 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 		LinearIndepRows=NewProjection["NonzeroPositions"]//First/@#&//Union;
 		NewProjection=NewProjection[[LinearIndepRows]];
 		NewProjection = NewProjection//SortMatIntoStrictRREFForm;
+		TmpTime=AbsoluteTime[];
 		NewProjection = ChineseRemainderMats[{projection,NewProjection},{Times@@UsedPrimes,CurrentPrime}];
+		VerbosePrint["Time (sec) used for Chinese remainder: ", AbsoluteTime[]-TmpTime];
 
 		AppendTo[UsedPrimes,CurrentPrime];
 		
