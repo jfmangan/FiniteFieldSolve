@@ -21,9 +21,32 @@ ConsistentEquationsQ::usage = "ConsistentEquationsQ[equations, (optional: prime)
 Begin["`Private`"]
 
 
-Reconstruct[0, _]:=0;
-Reconstruct[a_, n_]:=LatticeReduce[{{a, 1}, {n, 0}}][[1]]//Rational@@#&;
+Reconstruct[0]:=0;
+
+ReconstructLattice[a_, n_]:=LatticeReduce[{{a, 1}, {n, 0}}][[1]]//Rational@@#&;
 (*From Ben Page https://youtu.be/3cGyeN1a7bs?t=2806*)
+
+ReconstructCompiled[a_,n_]:=ReconstructCompiledHelper[a,n]//Rational@@#&;
+(*The whole ReconstructCompiledHelper is about as costly as the call to Rational at the end presumably because MMA calls a GCD algorithm inside Rational*)
+
+ReconstructCompiledHelper=Compile[{{a,_Integer},{n,_Integer}},
+Module[{u1,u2,u3,v1,v2,v3,q,r1,r2,r3,t1,t2,t3,n2},
+n2=Floor[Sqrt[n/2]];
+{u1,u2,u3}={1,0,n};
+{v1,v2,v3}={0,1,a};
+{t1,t2,t3}={0,0,0};
+{r1,r2,r3}={0,0,0};
+While[n2<=v3,
+	q=Floor[u3/v3];
+	{r1,r2,r3}={u1,u2,u3}-q{v1,v2,v3};
+	{u1,u2,u3}={v1,v2,v3};
+	{v1,v2,v3}={r1,r2,r3};
+];
+{v3,v2}
+],
+CompilationTarget->"C",RuntimeOptions->"Speed"];
+
+SetupReconstruct[prime_Integer]:=If[prime<Developer`$MaxMachineInteger, Reconstruct[a_]:=ReconstructCompiled[a,prime], Reconstruct[a_]:=ReconstructLattice[a,prime]];
 
 
 ChineseRemainderMats[{matrices__SparseArray}, primes_List]:=
@@ -254,7 +277,7 @@ Which[ToLowerCase[HomoOrInhomo]==="homogeneous",
 
 
 FiniteFieldSolveMatrix[CoefArr_,vars_List,HomoOrInhomo_,OptionsList_List:{}]:=
-Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, projection, reconstruction, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered, RatRecon},
+Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, projection, reconstruction, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered},
 	
 	(*Basic tests on input data*)
 	If[Not[Or[Head[CoefArr]==SparseArray,Head[CoefArr]==List]],Print["The Head of the input matrix needs to be List or SparseArray"];Abort[]];
@@ -348,8 +371,8 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 	VerbosePrint["Prime used: ",UsedPrimes[[1]]];
 	
 	TmpTime=AbsoluteTime[];
-	RatRecon[x_]:=Reconstruct[x,UsedPrimes[[1]]];
-	reconstruction = SparseArray[projection["NonzeroPositions"]->(RatRecon/@projection["NonzeroValues"]),Dimensions[projection]];
+	SetupReconstruct[UsedPrimes[[1]]];
+	reconstruction = SparseArray[projection["NonzeroPositions"]->(Reconstruct/@projection["NonzeroValues"]),Dimensions[projection]];
 	VerbosePrint["Time (sec) used for rational reconstruction: ", AbsoluteTime[]-TmpTime];
 	
 	While[CurrentPrime>2^(NumBits-1),(*Primes < 2^(NumBits-1) are used during compiled rational reconstruction*)
@@ -396,8 +419,8 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 		AppendTo[UsedPrimes,CurrentPrime];
 		
 		TmpTime=AbsoluteTime[];
-		RatRecon[x_]:=Reconstruct[x,Times@@UsedPrimes];
-		NewConstruction = SparseArray[NewProjection["NonzeroPositions"]->(RatRecon/@NewProjection["NonzeroValues"]),Dimensions[NewProjection]];
+		SetupReconstruct[Times@@UsedPrimes];
+		NewConstruction = SparseArray[NewProjection["NonzeroPositions"]->(Reconstruct/@NewProjection["NonzeroValues"]),Dimensions[NewProjection]];
 		VerbosePrint["Time (sec) used for rational reconstruction: ", AbsoluteTime[]-TmpTime];
 									
 		(*------------*)
