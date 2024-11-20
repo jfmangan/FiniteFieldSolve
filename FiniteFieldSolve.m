@@ -29,6 +29,7 @@ ReconstructLattice[a_, n_]:=LatticeReduce[{{a, 1}, {n, 0}}][[1]]//Rational@@#&;
 ReconstructCompiled[a_,n_]:=ReconstructCompiledHelper[a,n]//Rational@@#&;
 (*The whole ReconstructCompiledHelper is about as costly as the call to Rational at the end presumably because MMA calls a GCD algorithm inside Rational*)
 
+(*Critically this algorithm doesn't overflow.  Here a and n are both *signed* 64 bit ints.*)
 ReconstructCompiledHelper=Compile[{{a,_Integer},{n,_Integer}},
 Module[{u1,u2,u3,v1,v2,v3,q,r1,r2,r3,t1,t2,t3,n2},
 n2=Floor[Sqrt[n/2]];
@@ -37,8 +38,8 @@ n2=Floor[Sqrt[n/2]];
 {t1,t2,t3}={0,0,0};
 {r1,r2,r3}={0,0,0};
 While[n2<=v3,
-	q=Floor[u3/v3];
-	{r1,r2,r3}={u1,u2,u3}-q{v1,v2,v3};
+	q=Quotient[u3,v3]//Floor;(*q=Floor[u3/v3];*)
+	{r1,r2,r3}={u1,u2,u3}-q{v1,v2,v3};(*Never overflows*)
 	{u1,u2,u3}={v1,v2,v3};
 	{v1,v2,v3}={r1,r2,r3};
 ];
@@ -46,7 +47,7 @@ While[n2<=v3,
 ],
 CompilationTarget->"C",RuntimeOptions->"Speed"];
 
-SetupReconstruct[prime_Integer]:=If[prime<Developer`$MaxMachineInteger, Reconstruct[a_]:=ReconstructCompiled[a,prime], Reconstruct[a_]:=ReconstructLattice[a,prime]];
+SetupReconstruct[ProdPrimes_Integer]:=If[ProdPrimes<Developer`$MaxMachineInteger, Reconstruct[a_]:=ReconstructCompiled[a,ProdPrimes], Reconstruct[a_]:=ReconstructLattice[a,ProdPrimes]];
 
 
 ChineseRemainderMats[{matrices__SparseArray}, primes_List]:=
@@ -277,7 +278,7 @@ Which[ToLowerCase[HomoOrInhomo]==="homogeneous",
 
 
 FiniteFieldSolveMatrix[CoefArr_,vars_List,HomoOrInhomo_,OptionsList_List:{}]:=
-Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, projection, reconstruction, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered},
+Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, projection, reconstruction, NewProjection, NewConstruction, LinearIndepRows, RowsToUse, SortMatIntoStrictRREFForm, RemoveLinearlyDependentRows, ColumnsOfZeroVars, ZeroRules, ColsToUse, RemoveVariablesSetToZero, TmpTime, IndepVars, IndepVarsRep, NullVec, FoundSolution, PrintModErr, IssuedWarning, RowOrdering, ColOrdering, varsReordered, DecrementPrime},
 	
 	(*Basic tests on input data*)
 	If[Not[Or[Head[CoefArr]==SparseArray,Head[CoefArr]==List]],Print["The Head of the input matrix needs to be List or SparseArray"];Abort[]];
@@ -291,7 +292,7 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 	
 	If[MemberQ[OptionsList//ToLowerCase,"verbose"],VerbosePrint[str___]:=Print[str]];
 	IssuedWarning=False;
-	PrintModErr:=If[!IssuedWarning,IssuedWarning=True; Print["Bad projection!  Have you tried clearing the denominators of the system of equations by adding 'ClearDenominators' to the OptionsList of FiniteFieldSolve?  Further instances of this warning will be suppressed."];];
+	PrintModErr:=If[!IssuedWarning,IssuedWarning=True; Print["Warning: bad projection!  Have you tried clearing the denominators of the system of equations by adding 'ClearDenominators' to the OptionsList of FiniteFieldSolve?  Computation will proceed but further instances of this warning will be suppressed."];];
 
 	(*If you remove rows or columns from the matrix then when you solve the matrix again over a different prime, you might end up with an row reduced matrix with the rows in a different order.  That is, the linearly dependent rows might have affected the order in which you solve the rows.  So if you remove the linearly dependent rows you need to canonicalize the ordering of the rows.  This is only for reconstructing the actual solution so only use this right before reconstructing something.*)
 	SortMatIntoStrictRREFForm[mat_]:=
@@ -307,6 +308,22 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 	
 	NumBits=If[MemberQ[OptionsList//ToLowerCase,"32bit"//ToLowerCase],32,16];
 	CurrentPrime=NextPrime[2^NumBits];
+	
+	(*You want to be able to use the compiled reconstruction algorithm as long as possible so you temporarily switch to a smaller prime to fit in 63 bits*)
+	(*A more elegant solution would be to make your first prime fit in (NumBits-1) bits but that's wasteful because you might have solved the matrix on the first prime if you had that extra bit*)
+	DecrementPrime:=Which[
+		(*Switch to small primes*)
+		(Times@@UsedPrimes)*2^(NumBits-1) < 2^63 && (Times@@UsedPrimes)*2^NumBits > 2^63 && CurrentPrime > 2^(NumBits-1),
+		CurrentPrime=NextPrime[2^(NumBits-1),-1],
+		
+		(*Switch back to big primes*)
+		Last[UsedPrimes] < 2^(NumBits-1) && CurrentPrime < 2^(NumBits-1),
+		CurrentPrime = UsedPrimes//Select[#,(#>2^(NumBits-1))&]&//Min//NextPrime[#,-1]&,
+		
+		(*Default*)
+		True,
+		CurrentPrime=NextPrime[CurrentPrime,-1]
+	];
 	
 	UsedPrimes = {};
 	projection=$Failed;
@@ -375,7 +392,7 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 	reconstruction = SparseArray[projection["NonzeroPositions"]->(Reconstruct/@projection["NonzeroValues"]),Dimensions[projection]];
 	VerbosePrint["Time (sec) used for rational reconstruction: ", AbsoluteTime[]-TmpTime];
 	
-	While[CurrentPrime>2^(NumBits-1),(*Primes < 2^(NumBits-1) are used during compiled rational reconstruction*)
+	While[True,
 	
 		VerbosePrint["Working on prime number: ", Length[UsedPrimes]+1];
 		
@@ -387,7 +404,7 @@ Block[{NumBits, SolRules, VerbosePrint, OneAlias, CurrentPrime, UsedPrimes, proj
 		
 		NewProjection = $Failed;
 		While[NewProjection===$Failed,
-			CurrentPrime=NextPrime[CurrentPrime,-1];
+			DecrementPrime;
 			TmpTime=AbsoluteTime[];
 			
 			SolRules = rrefToRules[reconstruction,varsReordered[[ColsToUse]],OneAlias];
