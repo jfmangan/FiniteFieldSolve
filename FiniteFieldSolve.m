@@ -38,7 +38,7 @@ n2=Floor[Sqrt[n/2]];
 {t1,t2,t3}={0,0,0};
 {r1,r2,r3}={0,0,0};
 While[n2<=v3,
-	q=Quotient[u3,v3]//Floor;(*q=Floor[u3/v3];*)
+	q=Quotient[u3,v3]//Floor;(*q=Floor[u3/v3];*)(*You need to use Quotient here.  For example, if you try to reconstruct a=7366432536004519926 over n=9208040670005649947 you'll get the wrong value for q here after a few iterations in the While loop.*)
 	{r1,r2,r3}={u1,u2,u3}-q{v1,v2,v3};(*Never overflows*)
 	{u1,u2,u3}={v1,v2,v3};
 	{v1,v2,v3}={r1,r2,r3};
