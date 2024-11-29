@@ -55,7 +55,7 @@ Block[{NonZeroPos, CRTPair, CRT},
 	NonZeroPos = {mat1,mat2}//#["NonzeroPositions"]&/@#&//Flatten[#,1]&//DeleteDuplicates;
 	CRTPair=ExtendedGCD[p1,p2]//Last//Reverse//#*{p2,p1}&//Mod[#,p1 p2]&;
 	CRT[c1_,c2_]:=Mod[CRTPair . {c1,c2},p1*p2];
-    SparseArray[Table[pos->CRT[mat1[[##]]&@@pos,mat2[[##]]&@@pos],{pos, NonZeroPos}],Dimensions[mat1]]
+	SparseArray[Table[pos->CRT[mat1[[##]]&@@pos,mat2[[##]]&@@pos],{pos, NonZeroPos}],Dimensions[mat1]]
 ];
 
 
