@@ -54,7 +54,7 @@ ChineseRemainderMats[{mat1_SparseArray, mat2_SparseArray}, {p1_Integer, p2_Integ
 Block[{NonZeroPos, CRTPair, CRT},
 	NonZeroPos = {mat1,mat2}//#["NonzeroPositions"]&/@#&//Flatten[#,1]&//DeleteDuplicates;
 	CRTPair=ExtendedGCD[p1,p2]//Last//Reverse//#*{p2,p1}&//Mod[#,p1 p2]&;
-	CRT[c1_,c2_]:=Mod[CRTPair . {c1,c2},p1*p2];
+	CRT[c1_,c2_]:=Mod[CRTPair . {c1,c2},p1*p2];(*Repeated calls to CRT become very costly.*)
 	SparseArray[Table[pos->CRT[mat1[[##]]&@@pos,mat2[[##]]&@@pos],{pos, NonZeroPos}],Dimensions[mat1]]
 ];
 
@@ -62,6 +62,7 @@ Block[{NonZeroPos, CRTPair, CRT},
 RationalToInt[0,p_Integer]:=0;
 RationalToInt[a_Rational,p_Integer]:=Mod[Numerator[a]*ModularInverse[Denominator[a],p],p];
 RationalToInt[a_Integer,p_Integer]:=Mod[a,p];
+(*RationalToInt is an extremely costly function overall*)
 
 
 PackageDir=$InputFileName//DirectoryName;(*Get the package's directory.  $InputeFileName is only available when you initialize the package so you have to store it as a private variable.*)
@@ -224,6 +225,7 @@ Block[{i, row, mat, RowReduceNumericArray, PopulateRowOfMatrix, LibraryLinkFullP
 	(*I think passing as a MNumericArray is a tiny bit slower than passing as a MTensor but the difference is very small.*)
 	For[i=1,i<=Length[RowRange],i++,
 		row=Quiet[Check[CoefArr[[RowRange[[i]]]]//RationalToInt[#,prime]&/@#&//NumericArray[#,uIntType]&//#[[ColRange]]&,Return[$Failed]]];
+		(*The repeated call to RationalToInt is very costly.*)
 		(*It is fastest to section the row after it has been changed from a SparseArray into a NumericArray, that is, put [[ColRange]] last.  It's really dumb that it's faster to do RationalToInt on data you won't use rather than sectioning the array first.  This is one of the consequences of not making an internal copy of the input CoefArr.*)
 		PopulateRowOfMatrix[row,i];
 	];
