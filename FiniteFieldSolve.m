@@ -501,6 +501,7 @@ Block[{vars, matrix, homogeneous, CoefArrs},
 FiniteFieldSolve[equations_List, OptionsList_List:{}]:=
 Block[{vars, matrix, homogeneous, CoefArrs, sol, HomoOrInhomo},
 
+	If[equations//MemberQ[False],Print["Inconsistent equations"]; Abort[]];
 	{matrix,vars}=equations//DeleteCases[True]//EquationsToMatrixAndVars;
 	homogeneous=vars//Last//#===one&//Not;
 	If[homogeneous,HomoOrInhomo="homogeneous",HomoOrInhomo="inhomogeneous"];
@@ -535,6 +536,7 @@ Block[{rows},
 FindLinearlyIndependentEquations[equations_List, prime_Integer:65521, OptionsList_List:{}]:=
 Block[{mat,vars,rows},
 
+	If[equations//MemberQ[False],Print["Inconsistent equations"]; Return[$Failed]];
 	{mat,vars}=equations//DeleteCases[True]//EquationsToMatrixAndVars;
 	rows=FindLinearlyIndependentRowsHelper[mat, prime, OptionsList];
 	If[rows===$Failed,$Failed,equations//DeleteCases[True]//#[[rows]]&]
@@ -563,6 +565,7 @@ Block[{rref},
 ConsistentEquationsQ[equations_List, prime_Integer:65521, OptionsList_List:{}]:=
 Block[{mat,vars,homogeneous},
 
+	If[equations//MemberQ[False],Return[False]];(*For example if {1==0,...} is an equation*)
 	{mat,vars}=equations//DeleteCases[True]//EquationsToMatrixAndVars;
 	homogeneous=vars//Last//#===one&//Not;
 	If[homogeneous,Print["The input equations aren't inhomogeneous"];Abort[];];
